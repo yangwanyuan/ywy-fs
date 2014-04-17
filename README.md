@@ -8,7 +8,7 @@ name： yangwanyuan
 
 email：ywy8861@126.com
 
-github： https://github/yangwanyuan
+github： https://github.com/yangwanyuan
 
 DESCRIPTION
 ========================================
@@ -39,7 +39,7 @@ use：
   
     $dd if=/dev/zero of=/home/ywyfs.img bs=1M count=1024
    
-  2.格式化镜像文件，使用工具https://github.com/yangwanyuan/mkfs-ywy中mkfs.ywy执行文件
+  2.格式化镜像文件，使用工具https://github.com/yangwanyuan/mkfs-ywy 中 mkfs.ywy 执行文件
     
     $mkfs.ywy /home/ywyfs.img
   
