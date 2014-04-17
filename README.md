@@ -24,19 +24,25 @@ build：
   1.拷贝ywy_fs.h文件到/usr/src/linux-*/include/linux下
 
   2.在/usr/src/linux-*/include/linux/magic.h中加入文件系统magic数
-  #define YWY_SUPER_MAGIC    0x1214
+  
+    #define YWY_SUPER_MAGIC    0x1214
   
   3.make
 
 use：
+
   1.创建img文件
+  
     $dd if=/dev/zero of=/home/ywyfs.img bs=1M count=1024
    
   2.格式化镜像文件，使用工具https://github.com/yangwanyuan/mkfs-ywy中mkfs.ywy执行文件
+    
     $mkfs.ywy /home/ywyfs.img
     
   3.挂载设备
+    
     $mount -t ywy -o loop /home/ywyfs.img /mnt
     
 开始尽情的玩耍吧！！！：-）
+
 欢迎提bug！！
