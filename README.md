@@ -27,7 +27,9 @@ build：
   
     #define YWY_SUPER_MAGIC    0x1214
   
-  3.make
+  3.编译工程
+  
+    $make
 
 use：
 
@@ -38,8 +40,12 @@ use：
   2.格式化镜像文件，使用工具https://github.com/yangwanyuan/mkfs-ywy中mkfs.ywy执行文件
     
     $mkfs.ywy /home/ywyfs.img
+  
+  3.挂载ywy-fs内核模块
     
-  3.挂载设备
+    $insmod ./ywy.ko
+    
+  4.挂载设备
     
     $mount -t ywy -o loop /home/ywyfs.img /mnt
     
