@@ -286,6 +286,45 @@ int ywy_delete_entry(struct ywy_dir_entry *de, struct page *page){
 	return err;	
 }
 
+int ywy_make_empty(struct inode *inode, struct inode *dir)
+{
+	struct address_space *mapping = inode->i_mapping;
+	struct page *page = grab_cache_page(mapping, 0);  //<linux/pagemap.h> 申请一些需要用的页
+	
+	printk(KERN_INFO "dir.c: ywy_make_empty begin inode->i_ino = %d \n", (int)inode->i_ino);
+
+	char *kaddr;
+	int err = -ENOMEM;
+	
+	if(!page)
+		return err;
+	//两个文件夹. 和 ..
+	err = __ywy_write_begin(NULL, mapping, 0, 2*sizeof(struct ywy_dir_entry), AOP_FLAG_UNINTERRUPTIBLE, &page, NULL);
+	if(err){
+		unlock_page(page);   //<linux/pagemap.h>
+		goto fail;
+	}
+	
+	kaddr = kmap_atomic(page, KM_USER0); //<linux/highmem.h> 实现page到vaddr转换，相比kmap性能更高，不加锁
+	memset(kaddr, 0, PAGE_CACHE_SIZE);
+	
+	struct ywy_dir_entry *de = (struct ywy_dir_entry *)kaddr;
+	de->ino = inode->i_ino;
+	strcpy(de->name, ".");
+	de = ywy_next_entry(de);
+	de->ino = dir->i_ino;
+	strcpy(de->name, "..");
+
+	kunmap_atomic(kaddr, KM_USER0);  //<linux/highmem.h>
+
+	err = ywy_commit_chunk(page, 0, 2 * sizeof(struct ywy_dir_entry));
+fail:
+	printk(KERN_INFO "dir.c: ywy_make_empty end");
+	page_cache_release(page);
+	return err;
+		
+}
+
 const struct file_operations ywy_dir_operations = {
 	.llseek   = generic_file_llseek,
 	.read     = generic_read_dir,

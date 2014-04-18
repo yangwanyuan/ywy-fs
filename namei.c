@@ -83,8 +83,42 @@ static int ywy_symlink(struct inode *dir, struct dentry *dentry, const char* sym
 }
 
 static int ywy_mkdir(struct inode *dir, struct dentry *dentry, int mode){
-	printk(KERN_INFO "namei.c: ywy_mkdir");
-	return 0;
+	struct inode *inode;
+	struct ywy_super_block *ys = YWY_SB(dir->i_sb)->s_ys;
+	int err = -EMLINK; //too many links
+
+	printk(KERN_INFO "namei.c: ywy_mkdir begin");
+	if(dir->i_nlink >= (ys->s_link_max))
+		goto out;
+	inode_inc_link_count(dir);  //<linux/fs.h> link数增加
+	inode = ywy_new_inode(dir, &err);
+	if(!inode)
+		goto out_dir;
+	inode->i_mode = S_IFDIR | mode;
+	if(dir->i_mode & S_ISGID)
+		dir->i_mode |= S_ISGID;
+	ywy_set_inode(inode, 0);
+	inode_inc_link_count(inode);
+
+	err = ywy_make_empty(inode, dir);
+	if(err)
+		goto out_fail;
+	err=ywy_add_link(dentry, inode);
+	if(err)
+		goto out_fail;
+	d_instantiate(dentry, inode);  //<linux/dcache.h> 将inode写进dentry
+	
+	printk(KERN_INFO "namei.c: ywy_mkdir end inode->i_ino = %d\n", (int)inode->i_ino);
+out:
+	return err;
+out_fail:
+	// 需要减去两次link，因为在alloc_inode时候设置了一次inode->i_nlink = 1
+	inode_dec_link_count(inode); //<linux/fs.h>  link数减少
+	inode_dec_link_count(inode);
+	iput(inode);  //<linux/fs.h>
+out_dir:
+	inode_dec_link_count(inode);
+	goto out;
 }
 
 static int ywy_rmdir(struct inode *dir, struct dentry *dentry){
