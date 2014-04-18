@@ -43,6 +43,8 @@ extern struct ywy_dir_entry *ywy_find_entry(struct dentry*, struct page **);
 extern int ywy_add_link(struct dentry*, struct inode*);
 extern int ywy_delete_entry(struct ywy_dir_entry *de, struct page *page);
 extern int ywy_make_empty(struct inode *inode, struct inode *dir);
+extern int ywy_empty_dir(struct inode* inode);
+
 /*   inode.c */
 extern const struct address_space_operations ywy_aops;
 

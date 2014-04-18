@@ -286,6 +286,53 @@ int ywy_delete_entry(struct ywy_dir_entry *de, struct page *page){
 	return err;	
 }
 
+//判断文件夹是否空文件夹
+int ywy_empty_dir(struct inode* inode){
+	struct page *page = NULL;
+	unsigned long i, npages = ywy_dir_pages(inode);
+	char *name;
+	__u32 inumber;
+	printk(KERN_INFO "dir.c: ywy_empty_dir begin inode->i_ino = %d\n", (int)inode->i_ino);
+	for(i = 0; i< npages; i++){
+		char *p, *kaddr, *limit;
+
+		page = ywy_get_page(inode, i);
+		if(IS_ERR(page))
+			continue;
+
+		kaddr = (char*)page_address(page); //<linux/mm.h>
+		limit = kaddr + ywy_last_byte(inode, i) - sizeof(struct ywy_dir_entry);
+		for(p = kaddr; p <= limit; p = ywy_next_entry(p)){
+			struct ywy_dir_entry *de = (struct ywy_dir_entry *)p;
+			name = de->name;
+			inumber = de->ino;
+			if(inumber != 0 ){
+				if(name[0] != '.'){
+					goto not_empty;
+				}
+				if(!name[1]){
+					if(inumber != inode->i_ino)
+						goto not_empty;
+				}else if(name[1] != '.'){
+					goto not_empty;
+				}else if(name[2]){
+					goto not_empty;
+				}
+			}
+		}
+		ywy_put_page(page);
+	}
+	printk(KERN_INFO "dir.c: ywy_empty_dir end");
+	return 1;
+
+not_empty:
+	printk(KERN_INFO "dir.c: ywy_empty_dir end");
+	ywy_put_page(page);
+	return 0;
+
+}
+
+//创建新的空文件夹，创建.和..文件
 int ywy_make_empty(struct inode *inode, struct inode *dir)
 {
 	struct address_space *mapping = inode->i_mapping;

@@ -64,16 +64,16 @@ static int ywy_unlink(struct inode *dir, struct dentry *dentry){
 	de = ywy_find_entry(dentry, &page);
 	if(!de)
 		goto end_unlink;
-	printk(KERN_INFO "aaaaaaa");
+	//printk(KERN_INFO "aaaaaaa");
 	err = ywy_delete_entry(de, page);  //dir.c
 	if(err)
 		goto end_unlink;
-	printk(KERN_INFO "bbbbbb");
+	//printk(KERN_INFO "bbbbbb");
 	inode->i_ctime = dir->i_ctime;
 	inode_dec_link_count(inode);  //<linux/fs.h> inode的link数目减一
 	err = 0;
 end_unlink:
-	printk(KERN_INFO "ccccc");
+	//printk(KERN_INFO "ccccc");
 	return err;
 }
 
@@ -122,8 +122,18 @@ out_dir:
 }
 
 static int ywy_rmdir(struct inode *dir, struct dentry *dentry){
-	printk(KERN_INFO "namei.c: ywy_rmdir");
-	return 0;
+	struct inode *inode = dentry->d_inode;
+	printk(KERN_INFO "namei.c: ywy_rmdir begin inode->i_ino = %d\n", (int)inode->i_ino);
+	int err = -ENOTEMPTY;
+	if(ywy_empty_dir(inode)){
+		err = ywy_unlink(dir, dentry);
+		if(err){
+			inode_dec_link_count(dir);
+			inode_dec_link_count(dir);
+		}
+	}
+	printk(KERN_INFO "namei.c: ywy_rmdir end");
+	return err;
 }
 
 static int ywy_mknod(struct inode *dir, struct dentry *dentry, int mode, dev_t rdev){
