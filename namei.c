@@ -50,6 +50,7 @@ static struct dentry *ywy_lookup(struct inode *dir, struct dentry *dentry, struc
 	return NULL;
 }
 
+//创建硬链接
 static int ywy_link(struct dentry *old_dentry, struct inode *dir, struct dentry *dentry){
 	printk(KERN_INFO "namei.c: ywy_link");
 	return 0;
@@ -60,20 +61,18 @@ static int ywy_unlink(struct inode *dir, struct dentry *dentry){
 	struct inode *inode = dentry->d_inode;
 	struct page *page;
 	struct ywy_dir_entry *de;
-	printk(KERN_INFO "namei.c: ywy_unlink");
+	printk(KERN_INFO "namei.c: ywy_unlink begin dentry->d_name = %s", dentry->d_name.name);
 	de = ywy_find_entry(dentry, &page);
 	if(!de)
 		goto end_unlink;
-	//printk(KERN_INFO "aaaaaaa");
 	err = ywy_delete_entry(de, page);  //dir.c
 	if(err)
 		goto end_unlink;
-	//printk(KERN_INFO "bbbbbb");
 	inode->i_ctime = dir->i_ctime;
 	inode_dec_link_count(inode);  //<linux/fs.h> inode的link数目减一
 	err = 0;
 end_unlink:
-	//printk(KERN_INFO "ccccc");
+	printk(KERN_INFO "namei.c: ywy_unlink end");
 	return err;
 }
 

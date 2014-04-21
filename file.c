@@ -1,8 +1,20 @@
+#include  <linux/buffer_head.h>
 #include "ywy.h"
 
 int ywy_sync_file(struct file *file, struct dentry *dentry, int datasync){
-	printk(KERN_INFO "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-	return 0;
+	printk(KERN_INFO "!!!!!!!!file.c: ywy_sync_file begin dentry->name = %s", dentry->d_name.name );
+	struct inode *inode = dentry->d_inode;
+	int err,ret;
+	ret = sync_mapping_buffers(inode->i_mapping); // <linux/buffer_head.h>  同步buffer和磁盘上数据
+	if(!(inode->i_state & I_DIRTY))   //<linux/fs.h>
+		return ret;
+	if(datasync && !(inode->i_state & I_DIRTY))
+		return ret;
+	err = ywy_sync_inode(inode);  //inode.c
+	if(ret == 0)
+		ret = err;
+	printk(KERN_INFO "!!!!!!!!file.c: ywy_sync_file end");
+	return ret;
 }
 const struct file_operations ywy_file_operations = {
 	.llseek	   = generic_file_llseek,  //<linux/fs.h>

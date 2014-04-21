@@ -200,10 +200,8 @@ int ywy_add_link(struct dentry *dentry, struct inode *inode){
 	int err;
 	char *namx = NULL;
 	__u32 inumber;
-	//printk(KERN_INFO "aaaaaaaaaaaaaaa");
 	for(n = 0; n<=npages; n++){
 		char *limit, *dir_end;
-		//printk(KERN_INFO "bbbbbbbbbbbbbbb");
 		page = ywy_get_page(dir, n);
 		err = PTR_ERR(page);
 		if(IS_ERR(page))
@@ -213,7 +211,6 @@ int ywy_add_link(struct dentry *dentry, struct inode *inode){
 		dir_end = kaddr + ywy_last_byte(dir ,n); //该页内未被使用的空间地址
 		limit = kaddr + PAGE_CACHE_SIZE - sizeof(struct ywy_dir_entry);
 		for(p = kaddr; p<= limit; p = ywy_next_entry(p)){
-			//printk(KERN_INFO "cccccc");
 			de = (struct ywy_dir_entry *)p;
 			namx = de->name;
 			inumber = de->ino;
@@ -222,7 +219,6 @@ int ywy_add_link(struct dentry *dentry, struct inode *inode){
 			if(!inumber) //中途发现某个目录项未使用，对应索引节点号为0（被删除的）
 				goto got_it;
 
-			//printk(KERN_INFO "ddddd");
 			err = -EEXIST;  //新建文件在父目录中已存在
 			if(namecompare(namelen, YWY_NAME_LEN, name, namx))
 				goto out_unlock;
@@ -237,8 +233,6 @@ int ywy_add_link(struct dentry *dentry, struct inode *inode){
 got_it://准备开始写，pos为页内偏移，在pos处写
 	pos = (page->index<<PAGE_CACHE_SHIFT) + p - (char *)page_address(page);
 	err = __ywy_write_begin(NULL, page->mapping, pos, sizeof(struct ywy_dir_entry), AOP_FLAG_UNINTERRUPTIBLE, &page, NULL);
-	//printk(KERN_INFO "000000 err = %d",(int)err);
-	//printk(KERN_INFO "000000 err = %d",(int)11);
 	if(err)
 		goto out_unlock;
 	memcpy(namx, name, namelen);
@@ -249,13 +243,10 @@ got_it://准备开始写，pos为页内偏移，在pos处写
 	mark_inode_dirty(dir);  //<linux/fs.h>
 	printk(KERN_INFO "dir.c: ywy_add_link end page->index = %d,p = %p, adress = %s, pos = %d", (int)page->index, p, (char*)page_address(page), (int)pos);
 out_put:
-	//printk(KERN_INFO "1111");
 	ywy_put_page(page);
 out:
-	//printk(KERN_INFO "22222i err = %d",(int)err);
 	return err;
 out_unlock:
-	//printk(KERN_INFO "33333");
 	unlock_page(page);
 	goto out_put;
 }
@@ -376,5 +367,5 @@ const struct file_operations ywy_dir_operations = {
 	.llseek   = generic_file_llseek,
 	.read     = generic_read_dir,
 	.readdir  = ywy_readdir,
-	//.fsync	  = ywy_sync_file,
+	.fsync	  = ywy_sync_file,  //file.c
 };

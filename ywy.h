@@ -36,6 +36,12 @@ extern struct buffer_head *ywy_update_inode(struct inode *inode);
 extern void ywy_truncate(struct inode *inode);
 extern void ywy_free_inode(struct inode *inode);
 
+extern int ywy_sync_inode(struct inode*);
+
+/* file.c */
+extern int ywy_sync_file(struct file *, struct dentry *,int);
+
+
 /*   dir.c   */
 extern inline void ywy_put_page(struct page *page);
 extern struct ywy_dir_entry *ywy_find_entry(struct dentry*, struct page **);

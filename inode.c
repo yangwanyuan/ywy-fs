@@ -85,6 +85,26 @@ void ywy_truncate(struct inode *inode){
 	printk(KERN_INFO "inode.c: ywy_truncate end");
 }
 
+//同步inode节点
+int ywy_sync_inode(struct inode *inode){
+	printk(KERN_INFO "!!!!!!!!!!inode.c: ywy_sync_inode begin inode->i_ino = %d\n",(int)inode->i_ino);
+	int ret = 0;
+	struct buffer_head *bh;
+	bh = ywy_update_inode(bh);  //获取到磁盘索引节点所在的缓冲区
+	if(bh && buffer_dirty(bh)){  //<linux/buffer_head.h>中的宏定义 如果为脏就同步
+		sync_dirty_buffer(bh); //<linux/buffer_head.h>  
+		if(buffer_req(bh) && !buffer_uptodate(bh)){  // <linux/buffer_head.h>中宏定义
+			printk("IO error syncing ywy inode\n");
+			ret = -1;
+		}
+	}else if(!bh)
+		ret = -1;
+	brelse(bh);
+	printk(KERN_INFO "!!!!!!!!!!inode.c: ywy_sync_inode end");
+	return ret;
+}
+
+//新申请一个inode并填充
 struct inode *ywy_new_inode(struct inode *dir, int *err){
 	struct super_block *sb;
 	struct buffer_head *bh;
@@ -161,6 +181,12 @@ find:
 	return inode;
 }
 
+static const struct inode_operations ywy_symlink_inode_operations={
+	.readlink       = generic_readlink,   //<linux/fs.h>
+	.follow_link    = page_follow_link_light,  //<linux/fs.h>
+	.put_link       = page_put_link,     //<linux/fs.h>         
+};
+
 void ywy_set_inode(struct inode *inode,dev_t rdev){
 	//TODO:各种文件的操作调用
 	if (S_ISREG(inode->i_mode)){
@@ -172,6 +198,10 @@ void ywy_set_inode(struct inode *inode,dev_t rdev){
 		printk(KERN_INFO "inode.c: ywy_set_inode dir: inode->i_ino = %d\n", (int)inode->i_ino);
 		inode->i_op = &ywy_dir_inode_operations;
 		inode->i_fop = &ywy_dir_operations;
+		inode->i_mapping->a_ops = &ywy_aops;
+	}else if(S_ISLNK(inode->i_mode)){
+		printk(KERN_INFO "inode.c: ywy_set_inode dir: inode->i_ino = %d\n", (int)inode->i_ino);
+		inode->i_op = &ywy_symlink_inode_operations;
 		inode->i_mapping->a_ops = &ywy_aops;
 	}else
 		init_special_inode(inode, inode->i_mode, rdev); //<linux/fs.h>  特殊文件：字符，块，fifo，sock
